@@ -174,7 +174,7 @@ This is a hackathon demo project. For production use cases or partnerships, plea
 
 ### CORS errors
 - The API at http://45.63.65.41 should have CORS enabled
-- If you see CORS errors, contact evgeny.nelepko@partenit.io
+- If you see CORS errors, contact iuliia.gorshkova@partenit.io
 
 ---
 
