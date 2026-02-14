@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warehouse Under Pressure — Partenit Safety Demo</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="game.css">
+</head>
+
+<body class="game-page">
+  <!-- API Configuration Modal -->
+  <dialog id="config-modal" class="modal config-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🔑 AI Configuration</h2>
+        <p class="modal-subtitle">Configure your LLM to start playing</p>
+      </div>
+      <div class="modal-body">
+
+        <div class="config-section">
+          <h3>LLM Provider</h3>
+          <p class="config-help">Choose your LLM provider for natural language commands</p>
+          <select id="llm-provider" class="config-select">
+            <option value="gemini">Google Gemini</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+
+        <div class="config-section">
+          <h3>LLM API Key</h3>
+          <p class="config-help">
+            <span id="llm-help-gemini">Get your Gemini key at <a href="https://aistudio.google.com/app/apikey"
+                target="_blank">Google AI Studio</a></span>
+            <span id="llm-help-openai" style="display:none;">Get your OpenAI key at <a
+                href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a></span>
+          </p>
+          <input type="password" id="llm-api-key" placeholder="Your LLM API key" class="config-input">
+        </div>
+
+        <div class="config-status" id="config-status"></div>
+
+        <div class="modal-actions">
+          <button id="btn-save-config" class="btn-primary">Save & Start</button>
+          <button id="btn-cancel-config" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <header class="game-header">
+    <!-- ROW 1: brand + mission stats -->
+    <div class="hdr-row hdr-row-1">
+      <a class="game-logo" href="https://partenit.io" target="_blank" rel="noopener noreferrer">PARTENIT: 🔥 Warehouse
+        Under Pressure</a>
+      <span class="hdr-tagline">Trust layer: ALLOW / MODIFY / BLOCK. Transparent, no black box.</span>
+      <div id="mission-banner" class="hdr-mission">
+        <span class="hdr-mi">Revenue <b id="mission-revenue">$0/$500</b></span>
+        <span class="hdr-mi">Time <b id="mission-time">05:00</b></span>
+        <span class="hdr-mi">Safety <b id="mission-safety">100%</b></span>
+      </div>
+      <a class="hdr-link" href="https://partenit.io" target="_blank" rel="noopener noreferrer">partenit.io</a>
+    </div>
+    <!-- ROW 2: controls + buttons -->
+    <div class="hdr-row hdr-row-2">
+      <label>Scenario <select id="game-mode">
+          <option value="standard">Standard Ops</option>
+          <option value="audit">Safety Audit</option>
+          <option value="battery_crisis">Battery Crisis</option>
+          <option value="high_throughput">High Throughput</option>
+        </select></label>
+      <label>Difficulty <select id="game-difficulty">
+          <option value="easy">Easy (1)</option>
+          <option value="medium" selected>Medium (3)</option>
+          <option value="chaos">Chaos (6)</option>
+        </select></label>
+      <label>Priority <select id="game-priority">
+          <option value="safety" selected>🛡 Safety</option>
+          <option value="speed">⚡ Speed</option>
+          <option value="profit">💰 Profit</option>
+        </select></label>
+      <label>Control <select id="game-autonomy">
+          <option value="manual">Manual</option>
+          <option value="hybrid" selected>Hybrid</option>
+          <option value="auto">AI Auto</option>
+        </select></label>
+      <label>Trust Layer <select id="game-trust-layer" title="Off = Counterfactual (no safety gate)">
+          <option value="on" selected>ON (safe)</option>
+          <option value="off">OFF (demo)</option>
+        </select></label>
+      <span class="hdr-spacer"></span>
+      <button id="btn-start" class="btn-primary">New Game</button>
+      <button id="btn-config" class="btn-secondary-outline">⚙️ Config</button>
+      <button id="btn-help" class="btn-secondary-outline">How to Play</button>
+    </div>
+  </header>
+
+  <div class="game-container">
+    <!-- SIDEBAR: Metrics & Strategy -->
+    <aside class="game-sidebar">
+      <div class="panel metrics-panel">
+        <h3>📊 Live Metrics</h3>
+        <div class="metric-row">
+          <span class="metric-label">Money</span>
+          <span class="metric-value money" id="val-money">$1000</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Safety Score</span>
+          <div class="progress-bar">
+            <div class="fill safety" id="bar-safety" style="width: 100%"></div>
+          </div>
+          <span class="metric-val-text" id="val-safety">100%</span>
+        </div>
+
+        <!-- Multi-Robot Battery -->
+        <div class="metric-row">
+          <span class="metric-label">R1 Battery</span>
+          <div class="progress-bar">
+            <div class="fill battery" id="bar-battery-r1" style="width: 100%"></div>
+          </div>
+          <span class="metric-val-text" id="val-battery-r1">100%</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">R2 Battery</span>
+          <div class="progress-bar">
+            <div class="fill battery" id="bar-battery-r2" style="width: 100%"></div>
+          </div>
+          <span class="metric-val-text" id="val-battery-r2">100%</span>
+        </div>
+
+        <div class="metric-row small">
+          <span>Tasks: <strong id="val-tasks">0</strong></span>
+          <span>Time: <strong id="val-time">0</strong>s</span>
+        </div>
+        <div class="metric-row session-goal" title="Session goal: earn this much">
+          <span class="metric-label">Goal $500</span>
+          <div class="progress-bar small">
+            <div class="fill goal-fill" id="bar-goal" style="width: 0%"></div>
+          </div>
+          <span class="metric-val-text" id="val-goal">0%</span>
+        </div>
+      </div>
+
+      <div class="panel strategy-panel">
+        <h3>🧠 Strategy</h3>
+
+        <!-- CAPTAIN CONTROLS -->
+        <div class="control-group">
+          <label>Command Target</label>
+          <div class="robot-selector">
+            <input type="radio" name="robot-target" id="rb-r1" value="r1" checked> <label for="rb-r1">R1</label>
+            <input type="radio" name="robot-target" id="rb-r2" value="r2"> <label for="rb-r2">R2</label>
+          </div>
+        </div>
+
+        <div class="control-group quick-actions-group">
+          <label>Quick commands</label>
+          <div class="quick-actions" id="quick-actions">
+            <button type="button" class="btn-quick" data-command="go charge">Go charge</button>
+            <button type="button" class="btn-quick" data-command="take from pool">Take from pool</button>
+            <button type="button" class="btn-quick" data-command="pause">Pause</button>
+            <button type="button" class="btn-quick" data-command="resume">Resume</button>
+            <button type="button" class="btn-quick" data-command="status">Status</button>
+            <button type="button" class="btn-quick" data-command="drop all tasks">Drop all tasks</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Speed vs Safety Bias</label>
+          <input type="range" id="strategy-speed" min="0" max="1" step="0.1" value="0.5">
+          <div class="range-labels"><span>Safe</span><span>Fast</span></div>
+        </div>
+        <div class="control-group checkbox">
+          <label>
+            <input type="checkbox" id="strategy-aggressive">
+            Aggressive Mode
+          </label>
+        </div>
+        <div class="control-group checkbox">
+          <label title="Automatically create new tasks when done">
+            <input type="checkbox" id="task-auto-gen">
+            Auto-Assign (Infinite)
+          </label>
+        </div>
+        <button id="btn-apply-strategy" class="btn-secondary">Update Strategy</button>
+      </div>
+
+
+      <!-- TASK POOL PANEL -->
+      <div class="panel task-pool-panel">
+        <h3>📋 Task Pool (<span id="task-pool-count">0</span>)</h3>
+        <div id="task-pool-list" class="task-pool-list">
+          <div class="task-pool-empty">No tasks in pool</div>
+        </div>
+        <button id="btn-spawn-tasks" class="btn-secondary">Generate Tasks</button>
+        <button id="btn-auto-assign" class="btn-primary">🤖 Auto-Assign</button>
+      </div>
+
+      <div class="panel events-panel">
+        <h3>⚠️ Active Events</h3>
+        <ul id="events-list" class="events-list">
+          <!-- Events injected here -->
+          <li class="event-empty">No active incidents</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEW: Canvas & Chat -->
+    <main class="game-main-view">
+      <div id="alert-banner" class="alert-banner" style="display: none;">
+        <span class="alert-icon">🚨</span> <span id="alert-text">Audit In Progress!</span>
+      </div>
+
+      <div id="canvas-container" class="canvas-container">
+        <canvas id="warehouse" width="800" height="500"></canvas>
+        <div id="canvas-tooltip" class="canvas-tooltip" aria-hidden="true"></div>
+        <div class="overlay-ui" id="overlay-ui"></div>
+        <div id="canvas-summary" class="canvas-summary"></div>
+      </div>
+      <div id="mission-complete-overlay" class="mission-complete-overlay" style="display: none;">
+        <div class="mission-complete-card">
+          <h2>MISSION COMPLETE</h2>
+          <div class="mission-complete-stats">
+            <p><strong>Trust Layer:</strong> <span id="mc-trust-layer">ON</span></p>
+            <p><strong>Safety violations:</strong> <span id="mc-violations">0</span></p>
+            <p><strong>Revenue:</strong> $<span id="mc-revenue">0</span></p>
+            <p><strong>Decisions evaluated:</strong> <span id="mc-decisions">0</span></p>
+            <p><strong>Plans rejected (BLOCK/MODIFY):</strong> <span id="mc-rejected">0</span></p>
+            <p><strong>Constraints triggered:</strong> <span id="mc-constraints">0</span></p>
+            <p id="mc-moves-without-gate-row" style="display:none;"><strong>Moves without gate
+                (counterfactual):</strong> <span id="mc-moves-without-gate">0</span></p>
+          </div>
+          <button id="btn-mission-close" class="btn-primary">New Game</button>
+        </div>
+      </div>
+      <div id="you-can-help" class="you-can-help">
+        <h4>You can help</h4>
+        <div id="you-can-help-content" class="you-can-help-content">—</div>
+      </div>
+      <div class="example-commands">
+        <span class="example-label">Example commands:</span>
+        <button type="button" class="btn-example" data-cmd="Take from pool">Take from pool</button>
+        <button type="button" class="btn-example" data-cmd="R1 go charge">R1 go charge</button>
+        <button type="button" class="btn-example" data-cmd="R2 pause">R2 pause</button>
+        <button type="button" class="btn-example" data-cmd="Prioritize urgent tasks">Prioritize urgent</button>
+        <button type="button" class="btn-example" data-cmd="Work autonomously">Work autonomously</button>
+      </div>
+
+      <div class="game-console">
+        <div class="dual-chat-container">
+          <!-- R1 Chat -->
+          <div class="robot-chat-panel">
+            <div class="robot-chat-header">🤖 Robot R1</div>
+            <div id="chat-messages-r1" class="chat-messages">
+              <div class="chat-msg ai">R1: Ready for orders.</div>
+              <div id="chat-thinking-r1" class="chat-msg thinking" style="display:none;">R1 is thinking...</div>
+            </div>
+            <div class="chat-input-wrap">
+              <input type="text" id="chat-input-r1" class="chat-input" placeholder="Command R1..." />
+              <button type="button" id="chat-send-r1" class="chat-send">Send</button>
+            </div>
+          </div>
+
+          <!-- R2 Chat -->
+          <div class="robot-chat-panel">
+            <div class="robot-chat-header">🤖 Robot R2</div>
+            <div id="chat-messages-r2" class="chat-messages">
+              <div class="chat-msg ai">R2: Ready for orders.</div>
+              <div id="chat-thinking-r2" class="chat-msg thinking" style="display:none;">R2 is thinking...</div>
+            </div>
+            <div class="chat-input-wrap">
+              <input type="text" id="chat-input-r2" class="chat-input" placeholder="Command R2..." />
+              <button type="button" id="chat-send-r2" class="chat-send">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="console-right-row">
+          <div class="reasoning-section">
+            <h4>Reasoning Engine</h4>
+            <div id="reasoning-log" class="reasoning-log">Waiting for decision...</div>
+          </div>
+          <div class="stats-panel" id="system-stats">
+            <h4>System Efficiency</h4>
+            <div id="stats-content" class="stats-content"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- HELP MODAL -->
+  <dialog id="help-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🔥 How to Play: Warehouse Under Pressure</h2>
+        <button id="btn-close-help" class="btn-close">×</button>
+      </div>
+      <div class="modal-body">
+        <p>You are the operator of warehouse robots. Earn money by delivering boxes (pay by weight), avoid accidents,
+          and keep batteries above 15% so robots never get stuck at 0%.</p>
+
+        <h3>🏆 Objectives</h3>
+        <ul>
+          <li><strong>Complete tasks:</strong> Robots <strong>take boxes by weight</strong> (max 15 kg, max 3 boxes per
+            trip). Order "Pick from shelf X" or assign from the task pool. <strong>Each delivery earns $10 per
+              kg</strong> delivered to the bay (e.g. 4 kg → $40, 10 kg → $100). Heavier loads = more money.</li>
+          <li><strong>Stay safe:</strong> Getting too close to workers reduces <span style="color:var(--accent)">Safety
+              Score</span> and costs money. Collision (contact) costs <strong>$300</strong>.</li>
+          <li><strong>Battery:</strong> Moving and carrying drain power. Below <strong>15%</strong> the robot cancels
+            the current task (drops the box and says where), then goes to charge (releases other tasks to the pool). At
+            <strong>0%</strong> the robot is <strong>blocked until rescue</strong>; avoid that. Rescue fee
+            <strong>$500</strong>.
+          </li>
+        </ul>
+
+        <h3>🎮 Controls</h3>
+        <ul>
+          <li><strong>Chat:</strong> <em>Go charge</em>, <em>Pick from shelf 1</em>, <em>Status</em>.
+            <strong>Operator:</strong> <em>R1 pause</em> / <em>resume</em>, <em>R1 drop task T1</em> (release to pool
+            for the other robot), <em>R1 go shelf 3</em>. At 100% battery the robot asks before charging; reply
+            <em>yes</em> to confirm.
+          </li>
+          <li><strong>Strategy:</strong> <strong>Safe</strong> — slower, away from humans. <strong>Fast</strong> —
+            faster, higher risk.</li>
+        </ul>
+
+        <h3>🤝 Swarm & self-regulation</h3>
+        <ul>
+          <li>When one robot goes to charge, it <strong>releases its pending tasks to the pool</strong>; the other can
+            take them. If one is in the way, it <strong>yields</strong> so the other can pass. If a robot is
+            <strong>stuck</strong> (no progress), it backs off and resumes; you see this in the log.
+          </li>
+        </ul>
+
+        <h3>⚠️ Obstacles & events</h3>
+        <ul>
+          <li><strong>Worker slip</strong> — a worker slipped on the floor (safety incident). While active (~15 s), a
+            red banner shows "WORKER SLIP ACTIVE!" and <strong>robots are limited to lower speed</strong> for safety.
+            Then the event ends and speed returns to normal.</li>
+          <li><strong>Sensor glitch</strong> — lidar/sensor noise. Same effect: <strong>speed limit</strong> for ~10 s.
+            Banner: "SENSOR GLITCH ACTIVE!".</li>
+          <li><strong>Bay busy</strong> — loading bay is occupied for a few seconds. Robots that want to deliver wait
+            and report "Bay busy. Waiting."</li>
+          <li>Robots drain battery at <strong>different rates</strong> (not in sync), so one may need charge before the
+            other.</li>
+        </ul>
+
+        <h3>⚠️ Game modes</h3>
+        <ul>
+          <li><strong>Standard:</strong> Balanced.</li>
+          <li><strong>Audit:</strong> Strict safety; proximity violations <strong>$1000</strong>.</li>
+          <li><strong>Battery Crisis:</strong> Battery drains 2× faster; charge often.</li>
+        </ul>
+
+        <h3>📈 How to earn more</h3>
+        <ul>
+          <li>Assign <strong>heavier tasks</strong> when possible ($10/kg). Use the task pool and Auto-Assign, or send
+            "Pick from shelf X" for high-value boxes.</li>
+          <li>Keep batteries above 15% so robots never hit 0% (blocked + rescue fee). Use <em>Go charge</em> early if
+            you see one draining.</li>
+          <li>Use <em>pause</em> / <em>resume</em> and <em>drop task</em> to reassign work: e.g. pause R1, drop its
+            task, so R2 can take it.</li>
+          <li>Avoid collisions and proximity violations (Safe slider in Audit mode). Watch the Reasoning Engine and chat
+            for "human nearby" / "yielding".</li>
+          <li>Let the swarm work: when R1 goes to charge, R2 picks up released tasks; when one is stuck, recovery is
+            automatic.</li>
+        </ul>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="game.js"></script>
+</body>
+
+</html>
