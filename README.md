@@ -21,6 +21,8 @@ The system:
 
 This repository contains a browser-based simulation that demonstrates the full reasoning pipeline. You control two warehouse robots, assign delivery tasks, and observe the safety layer making decisions in real time — including path modifications, proximity alerts, battery management, and constraint-triggered blocks.
 
+**Live demo:** [http://45.63.65.41/game](http://45.63.65.41/game)
+
 **Objective:** Earn $500 in 5 minutes with zero safety violations.
 
 ---
