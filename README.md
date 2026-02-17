@@ -1,181 +1,208 @@
-# 🔒 Partenit Warehouse Safety - Interactive Demo
+# Partenit Safety Layer — Deterministic Reasoning for Warehouse Robotics
 
-**Interactive warehouse robot game demonstrating the Partenit Safety Layer**
+**A trust layer that evaluates robot actions before execution, applies safety policies, and generates structured decision explanations.**
 
-🏆 **Built for [AI Meets Robotics Hackathon](https://lablab.ai/)** by lablab.ai
-
----
-
-## 🎮 What is This?
-
-This is an interactive demo game where you control warehouse robots and see how the **Partenit Safety Layer** protects workers in real-time. The game demonstrates:
-
-- **Natural language control** - Command robots using plain English
-- **Real-time safety decisions** - Watch the trust layer ALLOW, MODIFY, or BLOCK unsafe actions
-- **Multi-robot coordination** - Manage 2 robots with swarm intelligence
-- **Mission objectives** - Earn $500 in 5 minutes with 0 safety violations
+Built with [Claude Code](https://claude.ai/claude-code) as the primary development agent — from architecture design to policy engine implementation and test generation.
 
 ---
 
-## 🚀 Quick Start
+## What This Project Does
 
-### 1. Get API Keys
+Partenit Safety Layer is a **deterministic reasoning layer** that sits between probabilistic AI perception and physical robot actuators. It ensures that every warehouse robot action passes through a formal policy evaluation before execution.
 
-#### LLM API Key (choose one)
-- **Google Gemini**: Get your key at [Google AI Studio](https://aistudio.google.com/app/apikey)
-- **OpenAI**: Get your key at [OpenAI Platform](https://platform.openai.com/api-keys)
+The system:
 
-### 2. Run Locally
+- **Evaluates actions in real-time** — every robot command is checked against mathematical safety constraints before it reaches the actuator
+- **Makes transparent decisions** — each evaluation produces a structured explanation: ALLOW, MODIFY, or BLOCK, with full reasoning traces
+- **Coordinates multi-robot operations** — manages concurrent robot behaviors with collision avoidance, task swapping, and shared resource scheduling
+- **Provides natural language control** — operators issue commands in plain English; the safety layer interprets intent and enforces constraints simultaneously
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd partenit-warehouse-game
+### Interactive Demo
 
-# Option 1: Python HTTP server
-python3 -m http.server 8080
+This repository contains a browser-based simulation that demonstrates the full reasoning pipeline. You control two warehouse robots, assign delivery tasks, and observe the safety layer making decisions in real time — including path modifications, proximity alerts, battery management, and constraint-triggered blocks.
 
-# Option 2: Node.js serve
-npx serve .
+**Objective:** Earn $500 in 5 minutes with zero safety violations.
 
-# Option 3: Any other static file server
+---
+
+## Architecture
+
+```
+Operator (natural language command)
+        │
+        ▼
+┌─────────────────────────┐
+│   Command Interpreter   │  ← LLM-powered intent parsing
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│   World State Engine    │  ← Robot positions, battery, worker locations,
+│                         │    shelf inventory, active tasks, sensor data
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│   Policy Evaluation     │  ← Deterministic constraint checks:
+│   (Safety Gate)         │    proximity, weight, battery, collision,
+│                         │    regulatory (OSHA, ISO)
+└────────────┬────────────┘
+             │
+        ┌────┴────┐
+        │         │
+     ALLOW     MODIFY / BLOCK
+        │         │
+        ▼         ▼
+┌──────────┐  ┌──────────────────┐
+│ Execute  │  │ Adjust or halt   │
+│ action   │  │ + explain why    │
+└──────────┘  └──────────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│  Explainability Log     │  ← Structured decision record:
+│                         │    triggered constraints, risk score,
+│                         │    candidate plans, chosen action
+└─────────────────────────┘
 ```
 
-### 3. Configure & Play
+**Key design principle:** The safety gate is purely mathematical — no ML in the critical decision path. LLMs handle language interpretation and explanation generation, but the actual ALLOW/MODIFY/BLOCK decision is deterministic and auditable.
 
-1. Open http://localhost:8080 in your browser
-2. Select your **LLM provider** (Gemini or OpenAI)
-3. Enter your **LLM API key**
-4. Click **"Save & Start"**
-5. Click **"New Game"** to begin!
+### Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | HTML5 Canvas, vanilla JavaScript, CSS3 |
+| Backend API | FastAPI (Python), hosted inference |
+| Safety Engine | Rule-based constraint evaluator, mathematical proximity/weight/battery models |
+| LLM Integration | Gemini or OpenAI (operator's key) for NL command parsing |
+| Decision Logging | Structured JSON traces with constraint-level granularity |
 
 ---
 
-## 🎯 How to Play
+## How Claude Code Was Used
 
-### Objective
-**Earn $500 in 5 minutes with 0 safety violations**
+This project was developed using Claude Code as a coding agent throughout the entire engineering workflow. Below is how Claude contributed at each stage:
 
-### Game Mechanics
+### Architecture Design
+Claude Code analyzed the requirements for a deterministic safety layer and proposed the separation between probabilistic AI (command interpretation) and deterministic policy evaluation (safety gate). The architecture — world state engine, constraint evaluator, and explainability logger — was designed collaboratively through iterative prompts, with Claude generating system diagrams and data flow specifications.
 
-- **Delivery Tasks**: Robots pick boxes by weight (max 15 kg, max 3 boxes per trip)
-- **Revenue**: Earn **$10 per kg** delivered to the bay (e.g., 4 kg → $40, 10 kg → $100)
-- **Safety**: Stay away from workers to maintain safety score. Collisions cost **$300**
-- **Battery**: Keep batteries above **15%**. At 0%, robot is blocked and rescue costs **$500**
+### Policy Engine Generation
+The core policy evaluation logic — proximity constraints, weight limits, battery thresholds, collision detection, multi-robot coordination rules — was generated by Claude Code. Each constraint was formalized as a pure function with defined input/output contracts, enabling independent testing and composition.
+
+### Safety Constraints Formalization
+Claude Code helped translate informal safety requirements (OSHA proximity rules, ISO compliance guidelines, vendor weight specifications) into formal constraint definitions with mathematical bounds. Each constraint produces a typed result: `ALLOW`, `MODIFY` (with adjustment parameters), or `BLOCK` (with explanation).
+
+### World State Representation
+The world state model — robot positions, velocities, battery levels, worker locations, shelf inventories, active tasks, and sensor readings — was structured by Claude Code to support efficient constraint evaluation. State updates are immutable snapshots, enabling deterministic replay and audit.
+
+### Explainability Layer
+Claude Code generated the structured explanation system that logs every safety decision with: triggered constraints, risk scores, candidate action plans, the chosen action, and human-readable reasoning. This layer is critical for regulatory compliance and operator trust.
+
+### Test Generation
+Claude Code wrote test cases for constraint evaluation, including edge cases: simultaneous multi-robot proximity violations, battery depletion during active tasks, weight limit boundary conditions, and cascading constraint interactions.
+
+### Iterative Refactoring
+Throughout development, Claude Code was used for refactoring passes — improving code organization, extracting shared utilities, tightening type contracts, and simplifying the rendering pipeline. The Canvas-based visualization was iteratively refined through prompt-driven development.
+
+### Development Workflow
+
+```
+Prompt (requirement or bug report)
+    → Claude Code generates implementation
+        → Manual review + test execution
+            → Follow-up prompt with feedback
+                → Claude Code refines
+                    → Commit
+```
+
+This workflow was repeated across all components: backend logic, frontend rendering, configuration management, and documentation.
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+You need an LLM API key for natural language command processing:
+- **Google Gemini**: [Google AI Studio](https://aistudio.google.com/app/apikey)
+- **OpenAI**: [OpenAI Platform](https://platform.openai.com/api-keys)
+
+### Run Locally
+
+```bash
+git clone https://github.com/GradeBuilderSL/partenit-claude-code-demo.git
+cd partenit-claude-code-demo
+
+# Serve the frontend
+python3 -m http.server 8080
+# or
+npx serve .
+```
+
+Open http://localhost:8080, enter your LLM API key, and start a new game.
 
 ### Controls
 
-**Chat Commands:**
-- `Go charge` - Send robot to charging station
-- `Pick from shelf 1` - Pick up boxes from specific shelf
-- `Status` - Get robot status
-- `Pause` / `Resume` - Control robot operation
-- `Drop task T1` - Release task to pool for other robot
+**Chat commands** (per robot):
+- `Go charge` — send robot to charging station
+- `Pick from shelf 1` — assign pickup task
+- `Status` — get robot state
+- `Pause` / `Resume` — control operation
+- `Drop task T1` — release task to pool
 
-**Quick Actions:**
-- Use the quick action buttons for common commands
-- Select target robot (R1/R2) before sending commands
-- Adjust strategy slider: Safe (slower, cautious) ↔ Fast (faster, risky)
+**Strategy configuration:**
+- Target robot selector (R1 / R2)
+- Speed/Safety slider — trade off throughput vs. caution
+- Aggressive mode — allow tighter proximity tolerances
+- Auto-assign — let the system distribute tasks
 
-### Trust Layer Decisions
+### Decision Transparency
 
-The Partenit Safety Layer evaluates every robot action:
+Watch the **Reasoning Engine** panel during gameplay. Every robot action shows:
 
-- ✅ **ALLOW** - Action is safe, proceed as planned
-- ⚠️ **MODIFY** - Action adjusted for safety (e.g., slower speed, different path)
-- 🛑 **BLOCK** - Action is unsafe, robot stops
-
-Watch the **Reasoning Engine** panel to see real-time safety decisions!
-
----
-
-## 🏗️ Architecture
-
-This demo uses:
-
-- **Frontend**: Pure HTML/CSS/JavaScript (no frameworks)
-- **Backend API**: Hosted at http://45.63.65.41
-- **Safety Layer**: Mathematical constraints + LLM reasoning
-- **LLM**: Your own API key (Gemini or OpenAI)
-
-### Cost Model
-
-- **Mathematical Safety**: FREE (pure math, no LLM)
-- **Natural Language Commands**: Uses YOUR LLM key (you pay only for what you use)
-- **Session Management**: FREE
-- **Typical cost**: ~$0.01-0.05 per game session
+- **Decision**: ALLOW / MODIFY / BLOCK
+- **Triggered constraints**: which safety rules fired
+- **Risk score**: quantified risk assessment
+- **Candidate plans**: alternative actions considered
+- **Explanation**: structured reasoning for the decision
 
 ---
 
-## 📚 API Documentation
+## Game Modes
 
-- **Swagger UI**: http://45.63.65.41/docs
-- **OpenAPI Spec**: http://45.63.65.41/openapi.json
+| Mode | Description |
+|------|------------|
+| Standard Ops | Balanced difficulty, normal worker density |
+| Safety Audit | Strict safety enforcement, frequent inspections |
+| Battery Crisis | 2x battery drain rate |
+| High Throughput | Maximum task density and complexity |
 
----
-
-## 🏢 About Partenit
-
-Partenit provides **Robotic Safety Compliance as a Service** - a trust layer that ensures robots operate safely around humans in warehouses, factories, and other environments.
-
-### Key Features
-
-- **Mathematical safety constraints** (no AI/ML in critical path)
-- **Real-time decision evaluation** (ALLOW/MODIFY/BLOCK)
-- **Regulatory compliance** (OSHA, ISO, vendor specs)
-- **Audit trail** with cryptographic proof
-- **Natural language interface** for operators
-
-### Contact & Links
-
-- **Website**: [partenit.io](https://partenit.io/)
-- **LinkedIn**: [linkedin.com/company/partenit](https://www.linkedin.com/company/partenit/)
-- **Email**: evgeny.nelepko@partenit.io
+**Difficulty levels:** Easy (1 worker), Medium (3 workers), Chaos (6 workers)
 
 ---
 
-## 🏆 Hackathon
+## About Partenit
 
-This project was built for the **AI Meets Robotics Hackathon** organized by [lablab.ai](https://lablab.ai/).
+Partenit provides **Robotic Safety Compliance as a Service** — a trust layer ensuring robots operate safely around humans in warehouses, factories, and industrial environments.
 
-**Theme**: Combining AI/LLM capabilities with robotic systems to solve real-world problems.
+Core capabilities:
+- Mathematical safety constraints (no AI/ML in the critical decision path)
+- Real-time pre-execution evaluation (ALLOW / MODIFY / BLOCK)
+- Regulatory compliance (OSHA, ISO, vendor specifications)
+- Cryptographic audit trails
+- Natural language operator interface
 
-**Our Solution**: A safety layer that makes warehouse robots safer and easier to control through natural language, while maintaining mathematical guarantees for safety-critical decisions.
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## 🤝 Contributing
-
-This is a hackathon demo project. For production use cases or partnerships, please contact us at evgeny.nelepko@partenit.io.
+**Website:** [partenit.io](https://partenit.io/)
+**LinkedIn:** [linkedin.com/company/partenit](https://www.linkedin.com/company/partenit/)
+**Contact:** evgeny.nelepko@partenit.io
 
 ---
 
-## 🐛 Troubleshooting
+## License
 
-### "Configuration required" modal won't close
-- Make sure you've entered your LLM API key
-- Check browser console for errors
-- Try refreshing the page
-
-### Game doesn't start
-- Check that your LLM API key has available quota
-- Open browser DevTools → Network tab to see API responses
-
-### Robots don't respond to commands
-- Check the chat panel for error messages
-- Verify your LLM provider is selected correctly
-- Ensure you have internet connection (API is remote)
-
-### CORS errors
-- The API at http://45.63.65.41 should have CORS enabled
-- If you see CORS errors, contact iuliia.gorshkova@partenit.io
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**Made with ❤️ for safer human-robot collaboration**
+**Deterministic reasoning for safer human-robot collaboration.**
